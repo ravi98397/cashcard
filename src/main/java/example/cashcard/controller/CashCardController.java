@@ -1,6 +1,7 @@
 package example.cashcard.controller;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -30,9 +31,8 @@ public class CashCardController {
 	private CashCardRepository cashCardRepository;
 
 	   @GetMapping("/{requestedId}")
-	   public ResponseEntity<CashCard> findById(@PathVariable Long requestedId) {
-		   System.out.println(requestedId);
-		   Optional<CashCard> cashCardOptional = cashCardRepository.findById(requestedId);
+	   public ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal) {
+		   Optional<CashCard> cashCardOptional = Optional.ofNullable(cashCardRepository.findByIdAndOwner(requestedId, principal.getName()));
 		     if (cashCardOptional.isPresent()) {
 		         return ResponseEntity.ok(cashCardOptional.get());
 		     } else {
@@ -41,17 +41,19 @@ public class CashCardController {
 	   }
 	   
 	   @PostMapping
-	   private ResponseEntity createCashCard(@RequestBody CashCard newCashCardRequest, UriComponentsBuilder ubc) {
-		  CashCard savedCashCard = cashCardRepository.save(newCashCardRequest);
+	   private ResponseEntity createCashCard(@RequestBody CashCard newCashCardRequest, UriComponentsBuilder ubc, Principal principal) {
+		  //CashCard savedCashCard = cashCardRepository.save(newCashCardRequest);
+		  CashCard cashCardWithOwner = cashCardRepository.save(new CashCard(null, newCashCardRequest.getAmount(), principal.getName()));
+		  
 		  URI locationOfNewCashCard = ubc.path("cashcards/{id}")
-				  .buildAndExpand(savedCashCard.getId())
+				  .buildAndExpand(cashCardWithOwner.getId())
 				  .toUri();
 	      return ResponseEntity.created(locationOfNewCashCard).build();
 	   }
 	   
 	   @GetMapping
-	   public ResponseEntity<Collection<CashCard>> findAll(Pageable pageable) {
-	       Page<CashCard> page = cashCardRepository.findAll(
+	   public ResponseEntity<Collection<CashCard>> findAll(Pageable pageable, Principal principal) {
+	       Page<CashCard> page = cashCardRepository.findByOwner(principal.getName(),
 	               PageRequest.of(
 	                       pageable.getPageNumber(),
 	                       pageable.getPageSize(),
@@ -59,6 +61,4 @@ public class CashCardController {
 	       ));
 	       return ResponseEntity.ok(page.toList());
 	   }
-	   
-	   
 }
