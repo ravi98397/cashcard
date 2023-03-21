@@ -10,4 +10,5 @@ import example.cashcard.model.CashCard;
 public interface CashCardRepository extends CrudRepository<CashCard, Long>, PagingAndSortingRepository<CashCard, Long> {
 	CashCard findByIdAndOwner(Long id, String owner);
 	Page<CashCard> findByOwner(String owner, PageRequest amount);
+	boolean existsByIdAndOwner(Long id, String name);
 }
